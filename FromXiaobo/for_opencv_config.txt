@@ -1,0 +1,1 @@
+http://docs.opencv.org/trunk/doc/tutorials/introduction/java_eclipse/java_eclipse.html

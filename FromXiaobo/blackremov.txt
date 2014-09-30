@@ -1,0 +1,175 @@
+
+private int scale = 1;
+	private int delta = 0;
+	int ddepth = CvType.CV_16S;
+	private int ratio = 3;
+	private int threshold = 20;
+	public float fixRatio = 0.125f;
+
+public  int[] removeBlackRegionNewWay(Mat img)
+	{
+		int []re = new int[4];
+		Mat grad_x, grad_y;
+
+		Imgproc.cvtColor(img, img, Imgproc.COLOR_RGB2GRAY);	
+		Scalar ss = Core.mean(img);
+		if(ss.val[0]<=10)
+		{
+			re[0] = -1;
+			return re;
+			
+		}
+			
+		grad_x = new Mat(img.rows(),img.cols(),img.type());	
+		grad_y = new Mat(img.rows(),img.cols(),img.type());
+	
+		Imgproc.Sobel(img, grad_y, ddepth, 0, 1,3, scale, delta, Imgproc.BORDER_DEFAULT); 		
+		Imgproc.Sobel(img, grad_x, ddepth, 1, 0,3, scale, delta, Imgproc.BORDER_DEFAULT); 
+				
+//		System.out.println(grad_x.rows()-1);
+//		System.out.println(grad_x.rows()*(1-(float)1/ratio));
+		int up = 0;
+		double upMax = -1;
+		double upAvg = 0;
+		int c1 = 0;
+		int bCt = 0;
+		int i;
+		for( i=0;i<grad_y.rows()/ratio;i++)
+		{
+			Scalar s = Core.sumElems(grad_y.row(i));
+			if(s.val[0]>=upMax)
+			{
+				Scalar sv = Core.mean(img.row(i));
+				if(sv.val[0]<threshold)
+				{
+					upMax = s.val[0];
+					up = i;
+				}
+				
+			}
+	//		upAvg += s.val[0];
+	//		c1++;
+		}
+//		System.out.println(grad_y.rows()/ratio);
+		if(up+1==grad_y.rows()/ratio) bCt++;
+		
+	//	upAvg /= c1;
+
+		int down = img.rows()-1;
+		double downMin = 999999;
+		double downAvg = 0;
+		int c2 = 0;
+		for(i=grad_y.rows()-1;i>grad_y.rows()*(1-(float)1/ratio);i--)
+		{
+			Scalar s = Core.sumElems(grad_y.row(i));
+			if(s.val[0]<=downMin)
+			{
+				Scalar sv = Core.mean(img.row(i));
+				if(sv.val[0]<threshold)
+				{
+					downMin = s.val[0];
+					down = i;
+				}
+				
+			}
+	//		downAvg += s.val[0];
+	//		c2++;
+		}
+	//	downAvg /= c2;
+		if(down-1==(int)(grad_y.rows()*(1-(float)1/ratio))) bCt++;
+		
+		//sum column
+		int left = 0;
+		double leftMax = -1;
+		double leftAvg = 0;
+		int c3 = 0;
+		for(i=0;i<grad_x.cols()/ratio;i++)
+		{
+			Scalar s = Core.sumElems(grad_x.col(i));
+			if(s.val[0]>=leftMax)
+			{
+				
+				Scalar sv = Core.mean(img.col(i));
+				//System.out.println("intensity " + sv.val[0]);
+				
+				if(sv.val[0]<threshold)
+				{
+					leftMax = s.val[0];
+					left = i;
+				}
+			}
+//			leftAvg += s.val[0];
+//			c3++;
+		}
+//		leftAvg /= c3;
+		if(left+1==(int)(grad_x.cols()/ratio)) bCt++;
+		
+		int right = img.cols()-1;
+		double rightMin = 999999;
+		double rightAvg = 0;
+		int c4 = 0;
+//		System.out.println(grad_x.cols()-1);
+//		System.out.println(grad_x.cols()*(1-(float)1/ratio));
+		for(i=grad_x.cols()-1;i>grad_x.cols()*(1-(float)1/ratio);i--)
+		{
+			Scalar s = Core.sumElems(grad_x.col(i));
+			if(s.val[0]<=rightMin)
+			{
+				Scalar sv = Core.mean(img.col(i));
+				//System.out.println("intensity " + sv.val[0]);
+				
+				if(sv.val[0]<threshold)
+				{
+					rightMin = s.val[0];
+					right = i;
+				}
+				
+			}
+		//	rightAvg += s.val[0];
+		//	c4++;
+		}
+		
+		if(right-1==(int)(grad_x.cols()*(1-(float)1/ratio)))  bCt++;
+		
+		//rightAvg /= c4;
+		//sum row
+	
+		if(bCt==4) 
+		{
+			re [0] = -1;
+			return re;
+		}
+
+		int leftRightLimit = (int) (img.cols()*fixRatio);
+		int upDownLimit = (int) (img.rows()*fixRatio);
+//		System.out.println("dist " + left + " "+ (img.cols() - right) + " " +  up + " "+ (img.rows()-down));
+//		System.out.println("left&right " + img.cols()*fixRatio + "up&down "+ img.rows()*fixRatio);
+//		System.out.println("bCt\t"+ bCt);
+	//	System.out.println(upMax  + " " + downMin + " " + leftMax + " " + rightMin);
+
+	//	System.out.println(upAvg + " " + downAvg + " "+ leftAvg + " "+ rightAvg);
+		int finalUpDown = Math.min(up, img.rows()-down);
+		int finalLeftRight = Math.min(left, img.cols() - right);
+		
+		if(Math.abs(finalLeftRight-leftRightLimit)>=5) finalLeftRight=0;
+		
+		if(Math.abs(up-upDownLimit)<5 || Math.abs(img.rows()-down-upDownLimit)<5)
+		{
+			up = upDownLimit;
+			down = img.rows()- up;
+		}
+		
+//		re [0] = left;
+		re [1] = up;
+//		re [2] = right;
+		re [3] = down;
+		
+		re [0] = finalLeftRight;
+		//re [1] = finalUpDown;
+		
+		re [2] = finalLeftRight==0?(img.cols()-1):(img.cols() - finalLeftRight);
+	//	re [3] = finalUpDown==0? (img.rows()-1):(img.rows()-finalUpDown);
+		
+		return re;
+
+	}
