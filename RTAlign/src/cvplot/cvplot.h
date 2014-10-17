@@ -45,6 +45,10 @@ namespace CvPlot
 		float *data;
 		// name of the curve
 		string label;
+		// point of interest
+		vector<int> poiVector;
+		float poiVectorScaling;
+		int poiPoint;
 
 		// allow automatic curve color
 		bool auto_color;
@@ -105,6 +109,7 @@ namespace CvPlot
 		Series* Add(const Series &s);
 		void Clear();
 		void DrawLabels(IplImage *output, int posx, int posy);
+		void DrawPointOfInterest(IplImage *output);
 
 		// show plot window
 		void Show();
@@ -138,7 +143,8 @@ namespace CvPlot
 				  int R, int G, int B);
 
 		void Label(string lbl);
-
+		void PointOfInterest(int poi);
+		void PointOfInterest(vector<int> poi, float scaling);
 	};
 
 	// handle different data types; static mathods;
@@ -149,5 +155,7 @@ namespace CvPlot
 	void clear(const string figure_name);
 
 	void label(string lbl);
+	void pointOfInterest(int poi);
+	void pointOfInterest(vector<int> poi,int scaling);
 
 };

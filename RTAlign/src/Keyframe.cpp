@@ -12,9 +12,9 @@ using namespace cv;
 /*******************************************************************************************/
 Keyframes::Keyframes()
 {
-	nrKeyframes = 6000;
+	nrKeyframes = 100;
 	featureType = 1;
-	showFrames = 1;
+	showFrames = 0;
 	frameRate = -1;
 
 }

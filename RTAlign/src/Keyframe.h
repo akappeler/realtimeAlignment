@@ -37,7 +37,7 @@ struct VideoSettings
 		uBorder=0;
 		dBorder=0;
 		maxNrFr = 9999999;
-		startFr = 0;
+		startFr = 1;
 	}
 };
 

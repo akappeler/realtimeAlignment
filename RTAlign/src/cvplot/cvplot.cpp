@@ -20,6 +20,7 @@ Series::Series(void)
 {
 	data = NULL;
 	label = "";
+	poiPoint = -1;
 	Clear();
 }
 
@@ -27,6 +28,7 @@ Series::Series(const Series& s):count(s.count), label(s.label), auto_color(s.aut
 {
 	data = new float[count];
 	memcpy(data, s.data, count * sizeof(float));
+	poiPoint = -1;
 }
 
 
@@ -236,13 +238,13 @@ void Figure::DrawAxis(IplImage *output)
 	// y max
 	if ((y_max - y_ref) > 0.05 * (y_max - y_min))
 	{
-		snprintf(text, sizeof(text)-1, "%.1f", y_max);
+		snprintf(text, sizeof(text)-1, "%.3f", y_max);
 		cvPutText(output, text, cvPoint(bs / 5, bs - chh / 2), &font, text_color);
 	}
 	// y min
 	if ((y_ref - y_min) > 0.05 * (y_max - y_min))
 	{
-		snprintf(text, sizeof(text)-1, "%.1f", y_min);
+		snprintf(text, sizeof(text)-1, "%.3f", y_min);
 		cvPutText(output, text, cvPoint(bs / 5, h - bs + chh), &font, text_color);
 	}
 
@@ -325,6 +327,40 @@ void Figure::DrawLabels(IplImage *output, int posx, int posy)
 
 }
 
+void Figure::DrawPointOfInterest(IplImage *output)
+{
+
+	int bs = border_size;
+	int h = figure_size.height;
+	int w = figure_size.width;
+
+	// draw the curves
+	for (vector<Series>::iterator iter = plots.begin();
+		iter != plots.end();
+		iter++)
+	{
+		//draw point
+		float poi = iter->poiPoint;
+		if (poi != -1)
+		{
+			int x = cvRound(( poi - x_min) * x_scale);
+			CvPoint next_point = cvPoint(bs + x, h - bs);
+			cvCircle(output, next_point, 5, CV_RGB(255,60,40), 2);
+		}
+
+		//draw vector
+		for (unsigned int i=0; i<iter->poiVector.size(); i++)
+		{
+			float poi = iter->poiVector[i]/iter->poiVectorScaling;
+			int x = cvRound(( poi - x_min) * x_scale);
+			CvPoint next_point = cvPoint(bs + x, h - bs);
+			cvCircle(output, next_point, 2, CV_RGB(0,0,185), 1);
+		}
+
+	}
+
+}
+
 // whole process of draw a figure.
 void Figure::Show()
 {
@@ -340,13 +376,13 @@ void Figure::Show()
 	//DrawLabels(output, figure_size.width - 100, 10);
 	DrawLabels(output, 100, 10);
 
+	DrawPointOfInterest(output);
+
 	cvShowImage(figure_name.c_str(), output);
 	cvWaitKey(1);
 	cvReleaseImage(&output);
 
 }
-
-
 
 bool PlotManager::HasFigure(string wnd)
 {
@@ -415,6 +451,27 @@ void PlotManager::Label(string lbl)
 	}
 }
 
+// add a point of interest to the most recently added curve
+void PlotManager::PointOfInterest(int poi)
+{
+	if((active_series!=NULL) && (active_figure != NULL))
+	{
+		active_series->poiPoint = poi;
+		active_figure->Show();
+	}
+}
+
+void PlotManager::PointOfInterest(vector<int> poi, float scaling)
+{
+	if((active_series!=NULL) && (active_figure != NULL))
+	{
+		active_series->poiVector = poi;
+		active_series->poiVectorScaling = scaling;
+		active_figure->Show();
+	}
+}
+
+
 // plot a new curve, if a figure of the specified figure name already exists,
 // the curve will be plot on that figure; if not, a new figure will be created.
 // static method
@@ -461,6 +518,15 @@ void label(string lbl)
 	pm.Label(lbl);
 }
 
+void pointOfInterest(int poi)
+{
+	pm.PointOfInterest(poi);
+}
+
+void pointOfInterest(vector<int> poi, int scaling)
+{
+	pm.PointOfInterest(poi,scaling);
+}
 
 template
 void plot(const string figure_name, const unsigned char* p, int count, int step,

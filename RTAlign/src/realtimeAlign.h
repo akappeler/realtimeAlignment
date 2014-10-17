@@ -12,13 +12,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <stdio.h>
 #include <string>
-#include <random>
+#include <math.h>
+//#include <random> //needs c++11
 
 #include "cvplot/cvplot.h"
 #include "Keyframe.h"
 
 void realtimeAlign(Keyframes db_frames,char * videoFilename);
-//void plot(string windowName,vector<float> data );
 
+double gaussian(double x,double mean, double var);
 
 #endif /* SRC_REALTIMEALIGN_H_ */
